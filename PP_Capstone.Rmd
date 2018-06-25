@@ -1,0 +1,56 @@
+---
+title: "PP_Capstone_Proposal"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+### Examining the causes of Power Plant Outages with respect to Frequency, nmber of outages, and Severity, duration of outages.
+
+This study will examine the causes of US power plant outages based on the following data from the North American Electrical Reliability Corporation (NERC) Generating Availability Data System (GADS).
+* CC_GT_2011_2017.csv - Combined Cycle Power Plants
+* GT_Jet_Engine_2013_2016.csv - Simple Cycle Power Plants
+* Fossil_steam_2013_2017.csv - Fossil Fuel Fired Boiler Steam Power Plants
+
+In each data file, the cause is determined by the "cause code", column/variable 5.
+
+It could be useful to examine outage duration in categories or bands.
+* 1 to 10 Days - Low Severity
+* 11 to 30 Days - Medium Severity
+* Greater than 30 Days - High Severity
+
+Cause Codes should be examined in each category for number of outages per cause, as well as total outage time per cause.
+
+With respect to graphing and plotting, a plot depicting which causes are most responsible (top 20?) in each category and mapping the relationship is the goal.
+
+With respect to outage type, "Type" / column 4, the following should be ignored as they are planned or maintenance outages and derates.
+* MO - Maintenance Outage
+* PE - Planned Extension
+* PD - Planned Derate
+* PO - Planned Outage
+* RS - Reserve Shutdown
+
+The first wrangling step is to clean the column names.
+
