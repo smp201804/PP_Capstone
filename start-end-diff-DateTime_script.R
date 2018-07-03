@@ -1,6 +1,6 @@
 library(tidyverse)
 library(lubridate)
-
+library(openxlsx)
 
 #create a combined field for start date and start time, start_dt
 
@@ -18,4 +18,11 @@ ff_steam_work <- ff_steam_work %>%
 
 ff_steam_work <- ff_steam_work %>%
   mutate(out_duration = ((end_dt - start_dt) / 60))
+
+#create a new data frame with specific fields in new order
+
+ff_steam_new <- ff_steam_work %>%
+  select(Util_Unit, start_dt, Type, Cause_Code, end_dt,
+         Time_To_Repair, TBF_Period_Hrs, IA_PH, 
+         TBF_Service_Hrs, IA_SH, X_Derate)
 
