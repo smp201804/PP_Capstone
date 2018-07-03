@@ -10,4 +10,16 @@ ff_steam_exp <- ff_steam_exp %>%
   mutate(Cause_Code = if_else(nchar(Cause_Code) == 2, paste0("00", Cause_Code),
                               if_else(nchar(Cause_Code) == 3, paste0("0", Cause_Code),
                                       if_else(nchar(Cause_Code) == 1, paste0("000", Cause_Code), Cause_Code))))
-         
+c_cycle_exp <- c_cycle_exp %>%
+  mutate(Cause_Code = as.character(Cause_Code)) %>%
+  mutate(Cause_Code = if_else(nchar(Cause_Code) == 2, paste0("00", Cause_Code),
+                              if_else(nchar(Cause_Code) == 3, paste0("0", Cause_Code),
+                                      if_else(nchar(Cause_Code) == 1, paste0("000", Cause_Code), Cause_Code))))
+
+s_cycle_exp <- s_cycle_exp %>%
+  mutate(Cause_Code = as.character(Cause_Code)) %>%
+  mutate(Cause_Code = if_else(nchar(Cause_Code) == 2, paste0("00", Cause_Code),
+                              if_else(nchar(Cause_Code) == 3, paste0("0", Cause_Code),
+                                      if_else(nchar(Cause_Code) == 1, paste0("000", Cause_Code), Cause_Code))))
+
+  
