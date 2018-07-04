@@ -22,4 +22,3 @@ s_cycle_exp <- s_cycle_exp %>%
                               if_else(nchar(Cause_Code) == 3, paste0("0", Cause_Code),
                                       if_else(nchar(Cause_Code) == 1, paste0("000", Cause_Code), Cause_Code))))
 
-  

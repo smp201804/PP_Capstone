@@ -58,5 +58,3 @@ s_cycle_work <- s_cycle_work %>%
          Time_To_Repair, TBF_Period_Hrs, IA_PH, 
          TBF_Service_Hrs, IA_SH, X_Derate)
 
-
-  
