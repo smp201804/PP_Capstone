@@ -14,7 +14,7 @@ ff_steam_exp <- ff_steam_exp %>%
 write.csv(ff_steam_exp, file = "ff_steam_expt.csv")
 
 
-c_cycle_exp <- c_cycle_workn
+c_cycle_exp <- c_cycle_worka
 
 c_cycle_exp <- c_cycle_exp %>%
   mutate(Cause_Code = as.character(Cause_Code)) %>%
