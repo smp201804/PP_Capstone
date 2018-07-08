@@ -25,9 +25,9 @@ c_cycle_exp <- c_cycle_exp %>%
 write.csv(c_cycle_exp, file = "c_cycle_expt.csv")
 
 
-s_cycle_exp <- s_cycle_worka
+s_cycle_expx <- s_cycle_worka
 
-s_cycle_exp <- s_cycle_exp %>%
+s_cycle_exp <- s_cycle_expx %>%
   mutate(Cause_Code = as.character(Cause_Code)) %>%
   mutate(Cause_Code = if_else(nchar(Cause_Code) == 2, paste0("00", Cause_Code),
                               if_else(nchar(Cause_Code) == 3, paste0("0", Cause_Code),
