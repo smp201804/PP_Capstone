@@ -90,4 +90,94 @@ names(s_cycle_edit) <- gsub(x = names(s_cycle_edit),
 write.csv(s_cycle_edit, file = "s_cycle_work.csv")
 
 
+#create a combined field for start date and start time, start_dt
+
+ff_steam_work <- ff_steam_work %>%
+  mutate(start_dt = paste(StartDate, StartTime, sep = " ", collapse = NULL)) %>%
+  mutate(start_dt = mdy_hms(start_dt))
+
+c_cycle_work <- c_cycle_work %>%
+  mutate(start_dt = paste(StartDate, StartTime, sep = " ")) %>%
+  mutate(start_dt = mdy_hm(start_dt))
+
+s_cycle_work <- s_cycle_work %>%
+  mutate(start_dt = paste(StartDate, StartTime, sep = " ")) %>%
+  mutate(start_dt = mdy_hm(start_dt))
+
+#create a combined field for end date and end time, end_dt
+
+ff_steam_work <- ff_steam_work %>%
+  mutate(end_dt = paste(End_Date, End_Time, sep = " ", collapse = NULL)) %>%
+  mutate(end_dt = mdy_hms(end_dt))
+
+c_cycle_work <- c_cycle_work %>%
+  mutate(end_dt = paste(End_Date, End_Time, sep = " ")) %>%
+  mutate(end_dt = mdy_hm(end_dt))
+
+s_cycle_work <- s_cycle_work %>%
+  mutate(end_dt = paste(End_Date, End_Time, sep = " ")) %>%
+  mutate(end_dt = mdy_hm(end_dt))
+
+#create a field for outage duration, out_duration, measured in hours
+
+ff_steam_work <- ff_steam_work %>%
+  mutate(out_duration = ((end_dt - start_dt) / 60))
+
+c_cycle_work <- c_cycle_work %>%
+  mutate(out_duration = ((end_dt - start_dt) / 60))
+
+s_cycle_work <- s_cycle_work %>%
+  mutate(out_duration = ((end_dt - start_dt) / 60))
+
+#create a new data frame with specific fields in new order
+
+ff_steam_worka <- ff_steam_work %>%
+  select(Util_Unit, start_dt, Type, Cause_Code, end_dt,
+         Time_To_Repair, TBF_Period_Hrs, IA_PH, 
+         TBF_Service_Hrs, IA_SH, X_Derate)
+
+c_cycle_worka <- c_cycle_work %>%
+  select(Util_Unit, start_dt, Type, Cause_Code, end_dt,
+         Time_To_Repair, TBF_Period_Hrs, IA_PH, 
+         TBF_Service_Hrs, IA_SH, X_Derate)
+
+s_cycle_worka <- s_cycle_work %>%
+  select(Util_Unit, start_dt, Type, Cause_Code, end_dt,
+         Time_To_Repair, TBF_Period_Hrs, IA_PH, 
+         TBF_Service_Hrs, IA_SH, X_Derate)
+
+
+
+#convert Cause_Code iteger field to 4 character string/character field
+ff_steam_exp <- ff_steam_worka
+
+ff_steam_exp <- ff_steam_exp %>%
+  mutate(Cause_Code = as.character(Cause_Code)) %>%
+  mutate(Cause_Code = if_else(nchar(Cause_Code) == 2, paste0("00", Cause_Code),
+                              if_else(nchar(Cause_Code) == 3, paste0("0", Cause_Code),
+                                      if_else(nchar(Cause_Code) == 1, paste0("000", Cause_Code), Cause_Code))))
+
+write.csv(ff_steam_exp, file = "ff_steam_expt.csv")
+
+
+c_cycle_exp <- c_cycle_worka
+
+c_cycle_exp <- c_cycle_exp %>%
+  mutate(Cause_Code = as.character(Cause_Code)) %>%
+  mutate(Cause_Code = if_else(nchar(Cause_Code) == 2, paste0("00", Cause_Code),
+                              if_else(nchar(Cause_Code) == 3, paste0("0", Cause_Code),
+                                      if_else(nchar(Cause_Code) == 1, paste0("000", Cause_Code), Cause_Code))))
+
+write.csv(c_cycle_exp, file = "c_cycle_expt.csv")
+
+
+s_cycle_expx <- s_cycle_worka
+
+s_cycle_exp <- s_cycle_expx %>%
+  mutate(Cause_Code = as.character(Cause_Code)) %>%
+  mutate(Cause_Code = if_else(nchar(Cause_Code) == 2, paste0("00", Cause_Code),
+                              if_else(nchar(Cause_Code) == 3, paste0("0", Cause_Code),
+                                      if_else(nchar(Cause_Code) == 1, paste0("000", Cause_Code), Cause_Code))))
+
+write.csv(s_cycle_exp, file = "s_cycle_expt.csv")
 
