@@ -1,4 +1,5 @@
 library(tidyverse)
+library(lubridate)
 
 # Fossil Fuel Steam
 ff_steam_df <- read_csv("ff_steam_expt.csv")
@@ -17,6 +18,8 @@ ff_steam_df %>% group_by(Type) %>%
 ggplot(data = ff_steam_df) +
   geom_boxplot(mapping = aes(x = Type, y = Time_To_Repair))
 
+
+
 #Combined Cycle
 cc_df <- read_csv("c_cycle_expt.csv")
 # Filter for only forced, not planned or reserve shutdowns, outages and derates
@@ -31,6 +34,16 @@ cc_df %>% group_by(Type) %>%
 # Create a Box Plot graph, x = Type, y = Time_To_Repair
 ggplot(data = cc_df) +
   geom_boxplot(mapping = aes(x = Type, y = Time_To_Repair))
+
+# create a stat summary plot, x = year(start_st), y = time to repair
+ggplot(data = cc_df) +
+  stat_summary(
+    mapping = aes(x = year(start_dt), y = Time_To_Repair),
+    fun.ymin = min,
+    fun.ymax = max,
+    fun.y = mean
+  ) +
+  facet_wrap(~ Type, nrow = 2)
 
 # Simple Cycle
 ss_df <- read_csv("s_cycle_expt.csv")
@@ -48,6 +61,13 @@ ss_df %>% group_by(Type) %>%
 ggplot(data = ss_df) +
   geom_boxplot(mapping = aes(x = Type, y = Time_To_Repair))
 
-  
-
+# create a stat summary plot, x = year(start_st), y = time to repair
+ggplot(data = ss_df) +
+  stat_summary(
+    mapping = aes(x = year(start_dt), y = Time_To_Repair),
+    fun.ymin = min,
+    fun.ymax = max,
+    fun.y = mean
+  ) +
+  facet_wrap(~ Type, nrow = 2)
 
