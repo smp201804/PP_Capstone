@@ -15,9 +15,20 @@ ff_steam_df %>% group_by(Type) %>%
   arrange(desc(Mean_TTR_Type_ff))
 
 # Create a Box Plot graph, x = Type, y = Time_To_Repair
-ggplot(data = ff_steam_df) +
+ff_box_Ty_TTR <- ggplot(data = ff_steam_df) +
   geom_boxplot(mapping = aes(x = Type, y = Time_To_Repair))
+ff_box_Ty_TTR
 
+# create a stat summary plot, x = year(start_st), y = time to repair
+ff_stat_sum <- ggplot(data = ff_steam_df) +
+  stat_summary(
+    mapping = aes(x = year(start_dt), y = Time_To_Repair),
+    fun.ymin = min,
+    fun.ymax = max,
+    fun.y = mean
+  ) +
+  facet_wrap(~ Type, nrow = 2)
+ff_stat_sum
 
 
 #Combined Cycle
@@ -32,11 +43,12 @@ cc_df %>% group_by(Type) %>%
   arrange(desc(Mean_TTR_Type_cc))
 
 # Create a Box Plot graph, x = Type, y = Time_To_Repair
-ggplot(data = cc_df) +
+cc_box_Ty_TTR <- ggplot(data = cc_df) +
   geom_boxplot(mapping = aes(x = Type, y = Time_To_Repair))
+cc_box_Ty_TTR
 
 # create a stat summary plot, x = year(start_st), y = time to repair
-ggplot(data = cc_df) +
+cc_stat_sum <- ggplot(data = cc_df) +
   stat_summary(
     mapping = aes(x = year(start_dt), y = Time_To_Repair),
     fun.ymin = min,
@@ -44,6 +56,8 @@ ggplot(data = cc_df) +
     fun.y = mean
   ) +
   facet_wrap(~ Type, nrow = 2)
+cc_stat_sum
+
 
 # Simple Cycle
 ss_df <- read_csv("s_cycle_expt.csv")
@@ -58,11 +72,12 @@ ss_df %>% group_by(Type) %>%
   arrange(desc(Mean_TTR_Type_ss))
 
 # Create a Box Plot graph, x = Type, y = Time_To_Repair
-ggplot(data = ss_df) +
+ss_box_Ty_TTR <- ggplot(data = ss_df) +
   geom_boxplot(mapping = aes(x = Type, y = Time_To_Repair))
+ss_box_Ty_TTR
 
 # create a stat summary plot, x = year(start_st), y = time to repair
-ggplot(data = ss_df) +
+ss_stat_sum <- ggplot(data = ss_df) +
   stat_summary(
     mapping = aes(x = year(start_dt), y = Time_To_Repair),
     fun.ymin = min,
@@ -70,4 +85,4 @@ ggplot(data = ss_df) +
     fun.y = mean
   ) +
   facet_wrap(~ Type, nrow = 2)
-
+ss_stat_sum
