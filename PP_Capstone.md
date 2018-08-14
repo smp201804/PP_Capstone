@@ -9,35 +9,6 @@ output:
 
 
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-
-```r
-summary(cars)
-```
-
-```
-##      speed           dist       
-##  Min.   : 4.0   Min.   :  2.00  
-##  1st Qu.:12.0   1st Qu.: 26.00  
-##  Median :15.0   Median : 36.00  
-##  Mean   :15.4   Mean   : 42.98  
-##  3rd Qu.:19.0   3rd Qu.: 56.00  
-##  Max.   :25.0   Max.   :120.00
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-![plot of chunk pressure](figure/pressure-1.png)
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-
 ### Examining the causes of Power Plant Outages with respect to Frequency, nmber of outages, and Severity, duration of outages.
 
 This study will examine the causes of US power plant outages based on the following data from the North American Electrical Reliability Corporation (NERC) Generating Availability Data System (GADS).
@@ -118,10 +89,10 @@ Since I am focusing on unplanned outages, I used the following to filter each da
 ![plot of chunk ff_steam_df, cc_df, ss_df](figure/ff_steam_df, cc_df, ss_df-1.png)
 
 ```
-## Error in Plot(ff_stat_sum): could not find function "Plot"
+## Warning: Removed 3 rows containing non-finite values (stat_summary).
 ```
 
-![plot of chunk ff_steam_df, cc_df, ss_df](figure/ff_steam_df, cc_df, ss_df-2.png)![plot of chunk ff_steam_df, cc_df, ss_df](figure/ff_steam_df, cc_df, ss_df-3.png)![plot of chunk ff_steam_df, cc_df, ss_df](figure/ff_steam_df, cc_df, ss_df-4.png)![plot of chunk ff_steam_df, cc_df, ss_df](figure/ff_steam_df, cc_df, ss_df-5.png)
+![plot of chunk ff_steam_df, cc_df, ss_df](figure/ff_steam_df, cc_df, ss_df-2.png)![plot of chunk ff_steam_df, cc_df, ss_df](figure/ff_steam_df, cc_df, ss_df-3.png)![plot of chunk ff_steam_df, cc_df, ss_df](figure/ff_steam_df, cc_df, ss_df-4.png)![plot of chunk ff_steam_df, cc_df, ss_df](figure/ff_steam_df, cc_df, ss_df-5.png)![plot of chunk ff_steam_df, cc_df, ss_df](figure/ff_steam_df, cc_df, ss_df-6.png)
 
 Given that there are hudreds of cause codes, Cause_Code, for each type of power plant, I grouped them by plant system, System, base on the NERC GADS appendix files.
 
