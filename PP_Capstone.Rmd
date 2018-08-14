@@ -204,7 +204,7 @@ cc_box_Ty_TTR
 cc_stat_sum
 
 ss_box_Ty_TTR
-cc_stat_sum
+ss_stat_sum
 ```
 
 Given that there are hudreds of cause codes, Cause_Code, for each type of power plant, I grouped them by plant system, System, base on the NERC GADS appendix files.
