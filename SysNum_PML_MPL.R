@@ -31,19 +31,19 @@ cc_dfb <- cc_dfb %>%
          InactNum = as.numeric((System == "Inactive")),
          PerfNum = as.numeric((System == "Performance")))
 
-# Create probable maximal loss (PML): 30 days < Time_To_Repair <= 90 days
-# Create maximum forseeable loss (MFL): Time_To_Repair > 90 days
+# Create probable maximal loss (PML): 10 days < Time_To_Repair <= 30 days
+# Create maximum forseeable loss (MFL): Time_To_Repair > 30 days
 
 ff_steam_dfb <- ff_steam_dfb %>% 
   mutate(PML = 
-           if_else(Time_To_Repair > 720 & Time_To_Repair <= 2160, "1", "0")) %>% 
+           if_else(Time_To_Repair > 240 & Time_To_Repair <= 720, "1", "0")) %>% 
   mutate(MFL = 
-           if_else(Time_To_Repair > 2160, "1", "0"))
+           if_else(Time_To_Repair > 720, "1", "0"))
 
 cc_dfb <- cc_dfb %>% 
   mutate(PML = 
-           if_else(Time_To_Repair > 720 & Time_To_Repair <= 2160, "1", "0")) %>% 
+           if_else(Time_To_Repair > 240 & Time_To_Repair <= 720, "1", "0")) %>% 
   mutate(MFL = 
-           if_else(Time_To_Repair > 2160, "1", "0"))
+           if_else(Time_To_Repair > 720, "1", "0"))
 
 

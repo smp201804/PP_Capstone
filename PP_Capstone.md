@@ -98,5 +98,16 @@ Given that there are hudreds of cause codes, Cause_Code, for each type of power 
 
 
 My next step is to create dummy numeric variables for each System type. This should allow me to begin using additional statistical methods.
+I used the following code to assign numeric variables to per above.
+
+
+I examinded the following distribution plots in order to set probable maximal loss (PML) at > 10 days, 240 hours, and <= 30 days, 720 hours, as well as maximum forseeable loss (MFL) at greater that 30 days.
+
+
+
+I used the following code to experiment with logistic regression for predicting (or showing an association wit) PML events by System.
+
+
+Experimenting with logistic regression for MFL
 
 
