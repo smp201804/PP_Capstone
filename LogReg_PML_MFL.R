@@ -81,3 +81,35 @@ MFL_mod_cc4 <- glm(PML ~ BoPNum + ElecNum + STNum + GenNum + GTNum +
                      JENum + PerfNum, data = cc_dfb, family = "binomial")
 
 
+# Refining Logistic Regression approach after discussion with course Mentor,
+# Dhiraj Khanna
+
+# Fossil Fuel Steam
+
+ff_steam_dfb <- ff_steam_dfb[complete.cases(ff_steam_dfb),]
+
+ff_steam_dfb <- ff_steam_dfb %>% 
+  mutate(PML = factor(PML, levels = c("0","1"))) %>% 
+  mutate(MFL = factor(MFL, levels = c("0","1")))
+
+ff_steam_dfb$System <- as.factor(ff_steam_dfb$System)
+
+fit_ffs <- glm(PML ~ System, data = ff_steam_dfb, family = "binomial")
+summary(fit_ffs)
+exp(coef(fit_ffs))
+
+# Combined Cycle
+
+cc_dfb <- cc_dfb[complete.cases(cc_dfb),]
+
+cc_dfb <- cc_dfb %>% 
+  mutate(PML = factor(PML, levels = c("0","1"))) %>% 
+  mutate(MFL = factor(MFL, levels = c("0","1")))
+
+cc_dfb$System <- as.factor(cc_dfb$System)
+
+fit_cc <- glm(PML ~ System, data = cc_dfb, family = "binomial")
+summary(fit_cc)
+exp(coef(fit_cc))
+
+

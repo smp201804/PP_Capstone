@@ -403,4 +403,117 @@ MFL_mod_cc3 <- glm(PML ~ BoPNum + ElecNum + STNum + GenNum + GTNum +
 MFL_mod_cc4 <- glm(PML ~ BoPNum + ElecNum + STNum + GenNum + GTNum +  
                      JENum + PerfNum, data = cc_dfb, family = "binomial")
 ```
+After discussion with my course Mentor, Dhiraj, we refined the logistic regression approach.
+
+```{r echo = FALSE}
+# Refining Logistic Regression approach after discussion with course Mentor,
+# Dhiraj Khanna
+
+# Fossil Fuel Steam
+
+ff_steam_dfb <- ff_steam_dfb[complete.cases(ff_steam_dfb),]
+
+ff_steam_dfb <- ff_steam_dfb %>% 
+  mutate(PML = factor(PML, levels = c("0","1"))) %>% 
+  mutate(MFL = factor(MFL, levels = c("0","1")))
+
+ff_steam_dfb$System <- as.factor(ff_steam_dfb$System)
+
+fit_ffs <- glm(PML ~ System, data = ff_steam_dfb, family = "binomial")
+summary(fit_ffs)
+exp(coef(fit_ffs))
+
+# Combined Cycle
+
+cc_dfb <- cc_dfb[complete.cases(cc_dfb),]
+
+cc_dfb <- cc_dfb %>% 
+  mutate(PML = factor(PML, levels = c("0","1"))) %>% 
+  mutate(MFL = factor(MFL, levels = c("0","1")))
+
+cc_dfb$System <- as.factor(cc_dfb$System)
+
+fit_cc <- glm(PML ~ System, data = cc_dfb, family = "binomial")
+summary(fit_cc)
+exp(coef(fit_cc))
+```
+While this doesn't have much predictive value with respect to failure rates and Time_To_Repair, from an equipment breakdown insurance perspective, it does show which systems will most likely result in a PML breakdown event.  I could use this in cooperation with our actuarial department to refine our rating for these risks.
+
+Dhiraj and I also experimented with K-means clustering on this data.
+
+```{r echo = FALSE}
+# Fossil Fuel Steam
+
+#First select the variables of importance
+ClData_ffs <- ff_steam_dfb %>% select(System, Time_To_Repair, TBF_Period_Hrs)
+ClData_ffs <- ClData_ffs[complete.cases(ClData_ffs),]
+ffs_df <- scale(ClData_ffs[-1])
+
+wssplot <- function(data, nc=15, seed=144){
+  wss <- (nrow(data)-1)*sum(apply(data,2,var))
+  for (i in 2:nc){
+    set.seed(seed)
+    wss[i] <- sum(kmeans(data, centers=i)$withinss)}
+  plot(1:nc, wss, type="b", xlab="Number of Clusters",
+       ylab="Within groups sum of squares")}
+
+wssplot(ffs_df) #Indicates use of 7 Clusters
+
+library(NbClust)
+ncF <- NbClust(ffs_df, min.nc=2, max.nc=15, method="kmeans")
+fit.kmF <- kmeans(ffs_df, 7, nstart=25)
+fit.kmF$size
+fit.kmF$centers
+aggregate(ClData_ffs[-1], by=list(cluster=fit.kmF$cluster), mean)
+ct.kmF <- table(ClData_ffs$System, fit.kmF$cluster)
+print(ct.kmF)
+
+library(flexclust)
+randIndex(ct.kmF)
+
+#Using PAM
+library(cluster)
+set.seed(666)
+fit.pamF <- pam(ClData_ffs[-1], k=7, stand=TRUE)
+
+
+# Combined Cycle
+
+#First select the variables of importance
+ClData_cc <- cc_dfb %>% select(System, Time_To_Repair, TBF_Period_Hrs)
+ClData_cc <- ClData_cc[complete.cases(ClData_cc),]
+cc_df <- scale(ClData_cc[-1])
+
+wssplot <- function(data, nc=15, seed=144){
+  wss <- (nrow(data)-1)*sum(apply(data,2,var))
+  for (i in 2:nc){
+    set.seed(seed)
+    wss[i] <- sum(kmeans(data, centers=i)$withinss)}
+  plot(1:nc, wss, type="b", xlab="Number of Clusters",
+       ylab="Within groups sum of squares")}
+
+wssplot(cc_df) #Indicates use of 3 Clusters
+
+ncC <- NbClust(cc_df, min.nc=2, max.nc=15, method="kmeans")
+fit.kmC <- kmeans(cc_df, 3, nstart=25)
+fit.kmC$size
+fit.kmC$centers
+aggregate(ClData_cc[-1], by=list(cluster=fit.kmC$cluster), mean)
+ct.kmC <- table(ClData_cc$System, fit.kmC$cluster)
+print(ct.kmC)
+
+randIndex(ct.kmC)
+
+#Using PAM
+set.seed(666)
+fit.pamC <- pam(ClData_cc[-1], k=3, stand=TRUE)
+```
+Based on the indicies at close to 0, as well as the clustering showing heavy concentrations in one or two clusters, these models are not very useful.
+
+This would have been more useful with the following types of data.
+* Hours running prior to failure
+* Number of starts and stops in the years prior to and between failure
+* Plant maintenance expenditures
+* Plant overhaul and maintenance schedules: number of daily, weekly, monthly maintenance items, number of major overhauls performed, etc.
+
 
