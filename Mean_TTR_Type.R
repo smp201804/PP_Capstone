@@ -11,12 +11,28 @@ ff_steam_df %>% group_by(Type) %>%
   summarise(Mean_TTR_Type = mean(Time_To_Repair, na.rm = TRUE)) %>%
   arrange(desc(Mean_TTR_Type))
 
+cc_df %>% group_by(Type) %>%
+  summarise(Mean_TTR_Type = mean(Time_To_Repair, na.rm = TRUE)) %>%
+  arrange(desc(Mean_TTR_Type))
+
 # Create a Box Plot graph, x = Type, y = Time_To_Repair
 ggplot(data = ff_steam_df, mapping = aes(x = Type, y = Time_To_Repair)) +
   geom_boxplot()
 
+ggplot(data = cc_df, mapping = aes(x = Type, y = Time_To_Repair)) +
+  geom_boxplot()
+
 # create a stat summary plot, x = year(start_st), y = time to repair
 ggplot(data = ff_steam_df) +
+  stat_summary(
+    mapping = aes(x = year(start_dt), y = Time_To_Repair),
+    fun.ymin = min,
+    fun.ymax = max,
+    fun.y = mean
+  ) +
+  facet_wrap(~ Type, nrow = 2)
+
+ggplot(data = cc_df) +
   stat_summary(
     mapping = aes(x = year(start_dt), y = Time_To_Repair),
     fun.ymin = min,
