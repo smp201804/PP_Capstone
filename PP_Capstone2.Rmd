@@ -1,0 +1,501 @@
+---
+title: "PP_Capstone_Proposal"
+Author: "Stephen Patti"
+Date:   "2018-09-07"
+output:
+  md_document:
+    variant: markdown_github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Examining the causes of Power Plant Outages with respect to Frequency, nmber of outages, and Severity, duration of outages.
+
+This study will examine the causes of US power plant outages based on the following data from the North American Electrical Reliability Corporation (NERC) Generating Availability Data System (GADS).
+* CC_GT_2011_2017.csv - Combined Cycle Power Plants
+* GT_Jet_Engine_2013_2016.csv - Simple Cycle Power Plants
+* Fossil_steam_2013_2017.csv - Fossil Fuel Fired Boiler Steam Power Plants
+
+My goal is determine which types of equipment failures are most responsible for unplanned/forced outages for each of these three types of plants.  To do this, I will have to do further examine the field Cause_Code, using the metadata associated with each four character code and chunking it into higher level or less granular categories.
+
+
+With respect to outage type, "Type" / column 4, the following should be ignored as they are planned or maintenance outages and derates.
+* MO - Maintenance Outage
+* PE - Planned Extension
+* PD - Planned Derate
+* PO - Planned Outage
+* RS - Reserve Shutdown
+
+The first wrangling step is to clean the column names.
+```{r c_cycle_edit, s_cycle_edit, echo=FALSE}
+library(tidyverse)
+library(lubridate)
+# clean column names for combined and simple cycle power plant data sets
+# fossil fuel steam already cleaned
+
+#   create data frame for combined cycle
+c_cycle_edit <- read.csv("CC_GT_2011_2017.csv")
+
+#   replace . or series of . with _
+names(c_cycle_edit) <- gsub(x = names(c_cycle_edit),
+                            pattern = "(\\.)+",
+                            replacement = "_")
+
+#   replace trailing _ with ""
+names(c_cycle_edit) <- gsub(x = names(c_cycle_edit),
+                            pattern = "(_)+$",
+                            replacement = "")
+
+#   create working combined cycle file
+write.csv(c_cycle_edit, file = "c_cycle_work.csv")
+
+#   create data frame for simple cycle
+s_cycle_edit <- read.csv("GT_Jet_Engine_2013_2016.csv")
+
+#   replace . or series of . with _
+names(s_cycle_edit) <- gsub(x = names(s_cycle_edit),
+                            pattern = "(\\.)+",
+                            replacement = "_")
+
+#   replace trailing _ with ""
+names(s_cycle_edit) <- gsub(x = names(s_cycle_edit),
+                            pattern = "(_)+$",
+                            replacement = "")
+
+#   create working combined cycle file
+write.csv(s_cycle_edit, file = "s_cycle_work.csv")
+```
+
+I wanted to create standard POSIX.ct date fields from the character fields in the data frames.
+
+
+```{r ff_steam_work, c_cycle_work, s_cycle_work, echo=FALSE}
+#create a combined field for start date and start time, start_dt,
+#and end date / end time, end_dt.
+
+ff_steam_work <- ff_steam_work %>%
+  mutate(start_dt = paste(StartDate, StartTime, sep = " ", collapse = NULL)) %>%
+  mutate(start_dt = mdy_hms(start_dt))
+
+ff_steam_work <- ff_steam_work %>%
+  mutate(end_dt = paste(End_Date, End_Time, sep = " ", collapse = NULL)) %>%
+  mutate(end_dt = mdy_hms(end_dt))
+
+c_cycle_work <- c_cycle_work %>%
+  mutate(start_dt = paste(StartDate, StartTime, sep = " ")) %>%
+  mutate(start_dt = mdy_hm(start_dt))
+
+c_cycle_work <- c_cycle_work %>%
+  mutate(end_dt = paste(End_Date, End_Time, sep = " ")) %>%
+  mutate(end_dt = mdy_hm(end_dt))
+
+s_cycle_work <- s_cycle_work %>%
+  mutate(start_dt = paste(StartDate, StartTime, sep = " ")) %>%
+  mutate(start_dt = mdy_hm(start_dt))
+
+s_cycle_work <- s_cycle_work %>%
+  mutate(end_dt = paste(End_Date, End_Time, sep = " ")) %>%
+  mutate(end_dt = mdy_hm(end_dt))
+```
+
+I created new data frames with only the desired fields.
+
+```{r ff_steam_worka, c_cycle_worka, s_cycle_worka, echo=FALSE}
+#create a new data frame with specific fields in new order
+
+ff_steam_worka <- ff_steam_work %>%
+  select(Util_Unit, start_dt, Type, Cause_Code, end_dt,
+         Time_To_Repair, TBF_Period_Hrs, IA_PH, 
+         TBF_Service_Hrs, IA_SH, X_Derate)
+
+c_cycle_worka <- c_cycle_work %>%
+  select(Util_Unit, start_dt, Type, Cause_Code, end_dt,
+         Time_To_Repair, TBF_Period_Hrs, IA_PH, 
+         TBF_Service_Hrs, IA_SH, X_Derate)
+
+s_cycle_worka <- s_cycle_work %>%
+  select(Util_Unit, start_dt, Type, Cause_Code, end_dt,
+         Time_To_Repair, TBF_Period_Hrs, IA_PH, 
+         TBF_Service_Hrs, IA_SH, X_Derate)
+```
+
+Since I am focusing on unplanned outages, I used the following to filter each data set (fossil fuel steam shown as an example) to include only unplanned derates: D1, D2, D3, start up failures: SF, and unplanned full outages: U1, U2, U3.
+
+```{r echo=FALSE}
+
+ff_steam_df <- read.csv("ff_steam_df.csv")
+cc_df <- read.csv("cc_df.csv")
+                
+# Filter for only forced, not planned or reserve shutdowns, outages and derates
+
+type_filter <- c("D1", "D2", "D3", "D4", "SF", "U1", "U2", "U3")
+ff_steam_df <- ff_steam_df %>%
+  filter(ff_steam_df$Type %in% type_filter)
+
+cc_df <- cc_df %>%
+  filter(cc_df$Type %in% type_filter)
+
+
+#I also calculated the mean by Type using these data frames per below.  It’s not
+#surprising that U1 has the highest mean as a U1 is an outage for which the
+#generating unit must be shut down immediately 
+
+# Calculate mean Time_To_Repair for each outage Type
+ff_steam_df %>% group_by(Type) %>%
+  summarise(Mean_TTR_Type_ff = mean(Time_To_Repair, na.rm = TRUE)) %>%
+  arrange(desc(Mean_TTR_Type_ff))
+
+cc_df %>% group_by(Type) %>%
+  summarise(Mean_TTR_Type_cc = mean(Time_To_Repair, na.rm = TRUE)) %>%
+  arrange(desc(Mean_TTR_Type_cc))
+         
+#I created box-plot graphs by type, in which the x axis was outage type, Type, and
+#the y axis was time to repair, Time_To_Repair, for each data frame.  I also created
+#stat summary graphs, x axis was year, y axis was type, and faceted by outage type.
+#Both show distributions with long right tails and high range outliers.
+
+# Create a Box Plot graph, x = Type, y = Time_To_Repair
+ggplot(data = ff_steam_df, mapping = aes(x = Type, y = Time_To_Repair)) +
+  geom_boxplot()
+
+ggplot(data = cc_df, mapping = aes(x = Type, y = Time_To_Repair)) +
+  geom_boxplot()
+
+# create a stat summary plot, x = year(start_st), y = time to repair
+ggplot(data = ff_steam_df) +
+  stat_summary(
+    mapping = aes(x = year(start_dt), y = Time_To_Repair),
+    fun.ymin = min,
+    fun.ymax = max,
+    fun.y = mean
+  ) +
+  facet_wrap(~ Type, nrow = 2)
+
+ggplot(data = cc_df) +
+  stat_summary(
+    mapping = aes(x = year(start_dt), y = Time_To_Repair),
+    fun.ymin = min,
+    fun.ymax = max,
+    fun.y = mean
+  ) +
+  facet_wrap(~ Type, nrow = 2)
+
+ff_box_Ty_TTR
+ff_stat_sum
+
+cc_box_Ty_TTR
+cc_stat_sum
+
+```
+Given that there are hudreds of cause codes, Cause_Code, for each type of power plant, I grouped them by plant system, System, base on the NERC GADS appendix files.
+
+```{r echo=FALSE}
+
+ff_steam_dfb <- ff_steam_df
+
+#Convert Cause_Code to numeric
+#Create a new variable, System, that categorizes Cause_Code according to NERC GADS
+#Appendix
+ff_steam_dfb <- ff_steam_dfb %>%
+  mutate(Cause_Code = as.numeric(Cause_Code)) %>%
+  mutate(System = 
+            if_else(Cause_Code>=10 & Cause_Code<=1999, "Boiler",
+            if_else((Cause_Code>=3110 & Cause_Code<=3549 | Cause_Code>=3800 & Cause_Code<=3999), "Balance_of_Plant",
+            if_else(Cause_Code>=3600 & Cause_Code<=3730, "Electrical",
+            if_else(Cause_Code>=4000 & Cause_Code<=4499, "Steam_Turbine",
+            if_else(Cause_Code>=4500 & Cause_Code<=5298, "Generator",
+            if_else(Cause_Code>=8000 & Cause_Code<=8845, "PCE",
+            if_else((Cause_Code>=9000 & Cause_Code<=9340 | Cause_Code==0), "External",
+            if_else(Cause_Code>=9504 & Cause_Code<=9720, "Regulatory",
+            if_else(Cause_Code>=9900 & Cause_Code<=9960, "Personnel",
+            if_else((Cause_Code==2 | Cause_Code>=9990 & Cause_Code<=9991), "Inactive", "Performance")))))))))))
+
+cc_dfb <- cc_df
+cc_dfb <- cc_dfb %>% 
+  mutate(Cause_Code = as.numeric(Cause_Code)) %>% 
+  mutate(System = 
+           if_else((Cause_Code>=111 & Cause_Code<=1999 | Cause_Code>=6000 & Cause_Code<=6183), "HRSG",
+           if_else((Cause_Code>=3110 & Cause_Code<=3549 | Cause_Code>=3800 & Cause_Code<=3899 | Cause_Code>=3950 & Cause_Code<=3999 | Cause_Code==6299 | Cause_Code==6399), "Balance_of_Plant",
+           if_else(Cause_Code>=3600 & Cause_Code<=3730, "Electrical",
+           if_else(Cause_Code>=4000 & Cause_Code<=4499, "Steam_Turbine",
+           if_else(Cause_Code>=4500 & Cause_Code<=4750, "Generator",
+           if_else(Cause_Code>=5000 & Cause_Code<=5299, "Gas_Turbine",
+           if_else(Cause_Code>=5400 & Cause_Code<=5699, "Jet_Engine",
+           if_else(Cause_Code==6200, "Miscellaneous",
+           if_else(Cause_Code>=7800 & Cause_Code<=7960, "Expander_Turbine",
+           if_else(Cause_Code>=8700 & Cause_Code<=8845, "PCE",
+           if_else((Cause_Code>=9000 & Cause_Code<=9340 | Cause_Code==0), "External",
+           if_else(Cause_Code>=9504 & Cause_Code<=9720, "Regulatory",
+           if_else(Cause_Code>=9900 & Cause_Code<=9960, "Personnel",
+           if_else((Cause_Code>=9990 & Cause_Code<=9991 | Cause_Code==2), "Inactive", "Performance")))))))))))))))
+
+```
+My next step is to create dummy numeric variables for each System type. This should allow me to begin using additional statistical methods.
+I used the following code to assign numeric variables to per above.
+
+```{r echo=FALSE}
+# Create binary numeric variables for System categories
+
+ff_steam_dfb <- ff_steam_dfb %>% 
+  mutate(BlrNum = as.numeric((System == "Boiler")),
+         BoPNum = as.numeric((System == "Balance_of_Plant")),
+         ElecNum = as.numeric((System == "Electrical")),
+         STNum = as.numeric((System == "Steam_Turbine")),
+         GenNum = as.numeric((System == "Generator")),
+         PCENum = as.numeric((System == "PCE")),
+         RegNum = as.numeric((System == "Regulatory")),
+         PersNum = as.numeric((System == "Personnel")),
+         InactNum = as.numeric((System == "Inactive")),
+         PerfNum = as.numeric((System == "Performance")))
+
+cc_dfb <- cc_dfb %>% 
+  mutate(HRSGNum = as.numeric((System == "HRSG")),
+         BoPNum = as.numeric((System == "Balance_of_Plant")),
+         ElecNum = as.numeric((System == "Electrical")),
+         STNum = as.numeric((System == "Steam_Turbine")),
+         GenNum = as.numeric((System == "Generator")),
+         GTNum = as.numeric((System == "Gas_Turbine")),
+         JENum = as.numeric((System == "Jet_Engine")),
+         MiscNum = as.numeric((System == "Miscellaneous")),
+         ETNum = as.numeric((System == "Expander_Turbine")),
+         PCENum = as.numeric((System == "PCE")),
+         RegNum = as.numeric((System == "Regulatory")),
+         PersNum = as.numeric((System == "Personnel")),
+         InactNum = as.numeric((System == "Inactive")),
+         PerfNum = as.numeric((System == "Performance")))
+```
+I examinded the following distribution plots in order to set probable maximal loss (PML) at > 10 days, 240 hours, and <= 30 days, 720 hours, as well as maximum forseeable loss (MFL) at greater that 30 days.
+
+```{r echo = FALSE}
+ggplot(data = ff_steam_dfb, aes(x = Time_To_Repair)) +
+         geom_density()
+       
+ggplot(data = ff_steam_dfb, aes(x = Time_To_Repair, color = Type)) +
+  geom_density() +
+  facet_grid(System ~ .)
+
+
+ggplot(data = cc_dfb, aes(x = Time_To_Repair)) +           
+  geom_density()
+
+ggplot(data = cc_dfb, aes(x = Time_To_Repair, color = Type)) + 
+  geom_density() +
+  facet_grid(System ~ .)
+```
+
+```{r echo=FALSE}
+# Create probable maximal loss (PML): 10 days < Time_To_Repair <= 30 days
+# Create maximum forseeable loss (MFL): Time_To_Repair > 30 days
+
+ff_steam_dfb <- ff_steam_dfb %>% 
+  mutate(PML = 
+           if_else(Time_To_Repair > 240 & Time_To_Repair <= 720, "1", "0")) %>% 
+  mutate(MFL = 
+           if_else(Time_To_Repair > 720, "1", "0"))
+
+cc_dfb <- cc_dfb %>% 
+  mutate(PML = 
+           if_else(Time_To_Repair > 240 & Time_To_Repair <= 720, "1", "0")) %>% 
+  mutate(MFL = 
+           if_else(Time_To_Repair > 720, "1", "0"))
+```
+
+I used the following code to experiment with logistic regression for predicting (or showing an association wit) PML events by System.
+
+```{r echo=FALSE}
+# Experimenting with logistic regression to determine which systems determine,
+# or are associated with PML and MFL.
+ff_steam_dfb <- ff_steam_dfb %>% 
+  mutate(PML = factor(PML, levels = c("0","1"))) %>% 
+  mutate(MFL = factor(MFL, levels = c("0","1")))
+
+PML_mod_ffs <- glm(PML ~ BlrNum + BoPNum + ElecNum + STNum + GenNum + 
+                     PCENum + RegNum + PersNum + InactNum + PerfNum, 
+                   data = ff_steam_dfb, family = "binomial")
+
+# Remove NA Variables
+PML_mod_ffs2 <- glm(PML ~ BlrNum + BoPNum + ElecNum + STNum + GenNum + 
+                     PersNum + PerfNum, data = ff_steam_dfb, family = "binomial")
+
+# Remove PersNum
+PML_mod_ffs3 <- glm(PML ~ BlrNum + BoPNum + ElecNum + STNum + GenNum + 
+                      PerfNum, data = ff_steam_dfb, family = "binomial")
+
+# Remove Elecnum
+PML_mod_ffs4 <- glm(PML ~ BlrNum + BoPNum + STNum + GenNum + 
+                      PerfNum, data = ff_steam_dfb, family = "binomial")
+
+
+cc_dfb <- cc_dfb %>% 
+  mutate(PML = factor(PML, levels = c("0","1"))) %>% 
+  mutate(MFL = factor(MFL, levels = c("0","1")))
+
+PML_mod_cc <- glm(PML ~ HRSGNum + BoPNum + ElecNum + STNum + GenNum + GTNum +  
+                     JENum + MiscNum + ETNum + PCENum + RegNum + PersNum + 
+                    InactNum + PerfNum, data = cc_dfb, family = "binomial")
+
+# Remove NA Variables
+PML_mod_cc2 <- glm(PML ~ HRSGNum + BoPNum + ElecNum + STNum + GenNum + GTNum +  
+                    JENum + PersNum + PerfNum, data = cc_dfb, family = "binomial")
+
+# Remove HRSGNum
+PML_mod_cc3 <- glm(PML ~ BoPNum + ElecNum + STNum + GenNum + GTNum +  
+                     JENum + PersNum + PerfNum, data = cc_dfb, family = "binomial")
+
+# Remove PersNum
+PML_mod_cc4 <- glm(PML ~ BoPNum + ElecNum + STNum + GenNum + GTNum +  
+                     JENum + PerfNum, data = cc_dfb, family = "binomial")
+```
+Experimenting with logistic regression for MFL
+```{r echo=FALSE}
+#MFL Fossil Fuel Steam Turbine
+MFL_mod_ffs <- glm(MFL ~ BlrNum + BoPNum + ElecNum + STNum + GenNum + 
+                     PCENum + RegNum + PersNum + InactNum + PerfNum, 
+                   data = ff_steam_dfb, family = "binomial")
+
+# Remove NA Variables: PCENum, REGNum, and InactNum
+MFL_mod_ffs2 <- glm(MFL ~ BlrNum + BoPNum + ElecNum + STNum + GenNum + 
+                     PersNum + PerfNum,data = ff_steam_dfb, family = "binomial")
+
+# Remove STNum
+MFL_mod_ffs3 <- glm(MFL ~ BlrNum + BoPNum + ElecNum + GenNum + 
+                      PersNum + PerfNum,data = ff_steam_dfb, family = "binomial")
+
+# Remove BOPNum, checking for multiple colinearity
+MFL_mod_ffs4 <- glm(MFL ~ BlrNum + ElecNum + GenNum + 
+                      PersNum + PerfNum,data = ff_steam_dfb, family = "binomial")
+
+
+# MFL Combined Cycle (cc)
+MFL_mod_cc <- glm(PML ~ HRSGNum + BoPNum + ElecNum + STNum + GenNum + GTNum +  
+                    JENum + MiscNum + ETNum + PCENum + RegNum + PersNum + 
+                    InactNum + PerfNum, data = cc_dfb, family = "binomial")
+
+# Remove NA Variables: MiscNum, ETNum, PCENum, RegNum, InactNum
+MFL_mod_cc2 <- glm(PML ~ HRSGNum + BoPNum + ElecNum + STNum + GenNum + GTNum +  
+                    JENum + PersNum + PerfNum, data = cc_dfb, family = "binomial")
+
+# Remove HRSGNum, highest Pr(>|z|)
+MFL_mod_cc3 <- glm(PML ~ BoPNum + ElecNum + STNum + GenNum + GTNum +  
+                     JENum + PersNum + PerfNum, data = cc_dfb, family = "binomial")
+
+# Remove PersGNum, next highest Pr(>|z|)
+MFL_mod_cc4 <- glm(PML ~ BoPNum + ElecNum + STNum + GenNum + GTNum +  
+                     JENum + PerfNum, data = cc_dfb, family = "binomial")
+```
+After discussion with my course Mentor, Dhiraj, we refined the logistic regression approach.
+
+```{r echo = FALSE}
+# Refining Logistic Regression approach after discussion with course Mentor,
+# Dhiraj Khanna
+
+# Fossil Fuel Steam
+
+ff_steam_dfb <- ff_steam_dfb[complete.cases(ff_steam_dfb),]
+
+ff_steam_dfb <- ff_steam_dfb %>% 
+  mutate(PML = factor(PML, levels = c("0","1"))) %>% 
+  mutate(MFL = factor(MFL, levels = c("0","1")))
+
+ff_steam_dfb$System <- as.factor(ff_steam_dfb$System)
+
+fit_ffs <- glm(PML ~ System, data = ff_steam_dfb, family = "binomial")
+summary(fit_ffs)
+exp(coef(fit_ffs))
+
+# Combined Cycle
+
+cc_dfb <- cc_dfb[complete.cases(cc_dfb),]
+
+cc_dfb <- cc_dfb %>% 
+  mutate(PML = factor(PML, levels = c("0","1"))) %>% 
+  mutate(MFL = factor(MFL, levels = c("0","1")))
+
+cc_dfb$System <- as.factor(cc_dfb$System)
+
+fit_cc <- glm(PML ~ System, data = cc_dfb, family = "binomial")
+summary(fit_cc)
+exp(coef(fit_cc))
+```
+While this doesn't have much predictive value with respect to failure rates and Time_To_Repair, from an equipment breakdown insurance perspective, it does show which systems will most likely result in a PML breakdown event.  I could use this in cooperation with our actuarial department to refine our rating for these risks.
+
+Dhiraj and I also experimented with K-means clustering on this data.
+
+```{r echo = FALSE}
+# Fossil Fuel Steam
+
+#First select the variables of importance
+ClData_ffs <- ff_steam_dfb %>% select(System, Time_To_Repair, TBF_Period_Hrs)
+ClData_ffs <- ClData_ffs[complete.cases(ClData_ffs),]
+ffs_df <- scale(ClData_ffs[-1])
+
+wssplot <- function(data, nc=15, seed=144){
+  wss <- (nrow(data)-1)*sum(apply(data,2,var))
+  for (i in 2:nc){
+    set.seed(seed)
+    wss[i] <- sum(kmeans(data, centers=i)$withinss)}
+  plot(1:nc, wss, type="b", xlab="Number of Clusters",
+       ylab="Within groups sum of squares")}
+
+wssplot(ffs_df) #Indicates use of 7 Clusters
+
+library(NbClust)
+# ncF <- NbClust(ffs_df, min.nc=2, max.nc=15, method="kmeans") Memory Error
+fit.kmF <- kmeans(ffs_df, 7, nstart=25)
+fit.kmF$size
+fit.kmF$centers
+aggregate(ClData_ffs[-1], by=list(cluster=fit.kmF$cluster), mean)
+ct.kmF <- table(ClData_ffs$System, fit.kmF$cluster)
+print(ct.kmF)
+
+library(flexclust)
+randIndex(ct.kmF)
+
+#Using PAM
+library(cluster)
+# set.seed(666)
+# fit.pamF <- pam(ClData_ffs[-1], k=7, stand=TRUE) Memory Error
+
+
+# Combined Cycle
+
+#First select the variables of importance
+ClData_cc <- cc_dfb %>% select(System, Time_To_Repair, TBF_Period_Hrs)
+ClData_cc <- ClData_cc[complete.cases(ClData_cc),]
+cc_df <- scale(ClData_cc[-1])
+
+wssplot <- function(data, nc=15, seed=144){
+  wss <- (nrow(data)-1)*sum(apply(data,2,var))
+  for (i in 2:nc){
+    set.seed(seed)
+    wss[i] <- sum(kmeans(data, centers=i)$withinss)}
+  plot(1:nc, wss, type="b", xlab="Number of Clusters",
+       ylab="Within groups sum of squares")}
+
+wssplot(cc_df) #Indicates use of 3 Clusters
+
+# ncC <- NbClust(cc_df, min.nc=2, max.nc=15, method="kmeans") Memory Error
+fit.kmC <- kmeans(cc_df, 3, nstart=25)
+fit.kmC$size
+fit.kmC$centers
+aggregate(ClData_cc[-1], by=list(cluster=fit.kmC$cluster), mean)
+ct.kmC <- table(ClData_cc$System, fit.kmC$cluster)
+print(ct.kmC)
+
+randIndex(ct.kmC)
+
+#Using PAM
+# set.seed(666)
+# fit.pamC <- pam(ClData_cc[-1], k=3, stand=TRUE)
+```
+Based on the indicies at close to 0, as well as the clustering showing heavy concentrations in one or two clusters, these models are not very useful.
+
+This would have been more useful with the following types of data.
+* Hours running prior to failure
+* Number of starts and stops in the years prior to and between failure
+* Plant maintenance expenditures
+* Plant overhaul and maintenance schedules: number of daily, weekly, monthly maintenance items, number of major overhauls performed, etc.
+
+
